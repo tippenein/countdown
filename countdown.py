@@ -1,6 +1,7 @@
 import os
 import signal
 from time import sleep
+from subprocess import Popen
 
 def parse_time(time):
     ''' takes a string and returns a [h,m,s] list '''
@@ -10,20 +11,19 @@ def parse_time(time):
         h = time.split('h')[0]
         remaining = ''.join(time.split('h')[1:])
     else: h = 0
-    print remaining 
+    print remaining
     if 'm' in remaining:
-        m = remaining.split('m')[0] 
+        m = remaining.split('m')[0]
         remaining = ''.join(time.split('m')[1:])
     else: m = 0
     s = remaining if remaining else 0
     return [int(h), int(m), int(s)]
 
 def display_time_tuple(tup):
-    return ' '.join( map( lambda t: str(t[0]) + t[1],
-                          zip(tup, ('h', 'm', 's'))) )
+    return ' '.join(map(lambda t: str(t[0]) + t[1], zip(tup, ('h', 'm', 's'))))
+
 
 def decr_time(time):
-    #TODO make this better
     if time[2] > 0:
         time[2] -= 1
     elif time[2] == 0 and time[1] > 0:
@@ -32,21 +32,25 @@ def decr_time(time):
     elif time[1] == 0 and time[0] > 0:
         time[0] -= 1
         time[1] = 59
+        time[2] = 59
     else:
         time = [0,0,0]
     return time
 
-def timer(time, func=None):
-    ''' takes a time list and an action for when time runs out '''
+def timer(t):
+    ''' takes any argument and waits a second '''
+    sleep(1)
 
-    os.system('cls' if os.name=='nt' else 'clear')
-    print display_time_tuple(time)
-    if time == [0,0,0]:
-        print "done"
-        if func: func()
-    else:
-        sleep(1)
-        timer(decr_time(time),func)
+def run(time, done_msg):
+    ''' takes a time list and an action for when time runs out '''
+    while time != [0,0,0]:
+        os.system('cls' if os.name=='nt' else 'clear')
+        print(display_time_tuple(time))
+        timer(decr_time(time))
+    done_func(done_msg)
+
+def done_func(msg):
+    Popen(['zenity', '--info', '--title="Notification"', '--text=%s' % msg])
 
 def signal_handler(signal, frame):
     sys.exit('timer interrupted')
@@ -54,4 +58,4 @@ def signal_handler(signal, frame):
 if __name__ == '__main__':
     import sys
     signal.signal(signal.SIGINT, signal_handler)
-    timer(parse_time(sys.argv[1]))
+    run(parse_time(sys.argv[1]), "Tea is Ready")
